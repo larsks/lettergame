@@ -1,0 +1,32 @@
+#!/usr/bin/python
+
+import os, sys, optparse, time, random
+import pygame
+from lettergame import LetterGame
+
+def parse_args():
+  parser = optparse.OptionParser()
+
+  parser.add_option('-g', '--geometry', default='800x600')
+  parser.add_option('-T', '--tick', default='60')
+  parser.add_option('-F', '--fullscreen', action='store_true', default=False)
+  parser.add_option('-H', '--use-hardware', action='store_true', default=False)
+  parser.add_option('-d', '--sound-dir', default = 'sounds')
+
+  return parser.parse_args()
+
+def main():
+  os.environ['SDL_VIDEO_CENTERED'] = '1'
+  opts, args = parse_args()
+
+  size = [int(x) for x in opts.geometry.split('x')]
+
+  game = LetterGame(size = size,
+		  fullscreen = opts.fullscreen, 
+		  useHardware = opts.use_hardware,
+		  soundDirectory = opts.sound_dir,
+		  tick = int(opts.tick))
+  game.run()
+
+if __name__ == '__main__': main()
+
