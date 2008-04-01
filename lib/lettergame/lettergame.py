@@ -143,6 +143,7 @@ class LetterGame (object):
       fullscreen = False,
       useHardware = False, 
       soundDirectory = None,
+      imageDirectory = None,
       tick = 60):
 
     self.size = size
@@ -156,6 +157,11 @@ class LetterGame (object):
       self.soundDirectory = soundDirectory
     else:
       self.soundDirectory = os.path.join(os.path.dirname(__file__), 'sounds')
+
+    if imageDirectory is not None:
+      self.imageDirectory = imageDirectory
+    else:
+      self.imageDirectory = os.path.join(os.path.dirname(__file__), 'images')
 
     if fullscreen:
       self.isFullScreen = True
@@ -195,7 +201,8 @@ class LetterGame (object):
     self.screen = pygame.display.set_mode(self.size, self.flags)
     self.letterOrigin = self.screen.get_rect().center
 
-    self.cat = bouncingImage('cat-small.png', self.screen, colorkey=(0,255,0))
+    self.cat = bouncingImage(os.path.join(self.imageDirectory, 'cat-small.png'),
+        self.screen, colorkey=(0,255,0))
     self.sprites = pygame.sprite.Group(self.cat)
     self.clock = pygame.time.Clock()
 

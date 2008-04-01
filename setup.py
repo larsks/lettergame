@@ -15,6 +15,9 @@ setup(name = "lettergame",
   scripts = [
     'scripts/lettergame',
   ],
-  package_data={'lettergame': ['sounds/*/*.wav']}
+  package_data={'lettergame': [
+    'sounds/*/*',
+    'images/*',
+    ]}
 )
 
