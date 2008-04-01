@@ -2,6 +2,7 @@
 
 import os, sys, optparse, time, random
 import pygame
+from limitedQueue import LimitedQueue
 
 def randomColor():
   return (random.randint(0,255),
@@ -144,9 +145,11 @@ class LetterGame (object):
       useHardware = False, 
       soundDirectory = None,
       imageDirectory = None,
+      maxSprites = 10,
       tick = 60):
 
     self.size = size
+    self.maxSprites = maxSprites
     self.tick = tick
     self.quit = False
     self.flags = 0
@@ -204,6 +207,7 @@ class LetterGame (object):
     self.cat = bouncingImage(os.path.join(self.imageDirectory, 'cat-small.png'),
         self.screen, colorkey=(0,255,0))
     self.sprites = pygame.sprite.Group(self.cat)
+    self.Qsprites = LimitedQueue(self.maxSprites, lambda x: x.kill())
     self.clock = pygame.time.Clock()
 
     background = pygame.Surface(self.screen.get_size())
@@ -262,10 +266,14 @@ class LetterGame (object):
     sound.play()
 
   def newLetter(self, event):
-    self.sprites.add(animatedLetter(self.letterOrigin, event.unicode.upper()))
+    letter = animatedLetter(self.letterOrigin, event.unicode.upper())
+    self.Qsprites.enqueue(letter)
+    self.sprites.add(letter)
 
   def newRipple(self, event):
-    self.sprites.add(simpleRipple(event.pos))
+    ripple = simpleRipple(event.pos)
+    self.Qsprites.enqueue(ripple)
+    self.sprites.add(ripple)
 
   def toggleFullScreen(self):
     if self.isFullScreen:
@@ -275,5 +283,4 @@ class LetterGame (object):
       self.screen = pygame.display.set_mode(self.size, self.flags | pygame.FULLSCREEN)
       self.isFullScreen = True
 
-if __name__ == '__main__': main()
 
