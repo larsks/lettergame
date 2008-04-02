@@ -8,11 +8,11 @@ def parse_args():
   parser = optparse.OptionParser()
 
   parser.add_option('-g', '--geometry', default='800x600')
-  parser.add_option('-T', '--tick', default='60')
+  parser.add_option('-T', '--tick', default=0)
   parser.add_option('-F', '--fullscreen', action='store_true', default=False)
   parser.add_option('-H', '--use-hardware', action='store_true', default=False)
   parser.add_option('-d', '--sound-dir')
-  parser.add_option('-M', '--max-sprites', default = None)
+  parser.add_option('-M', '--max-sprites', default=0)
 
   return parser.parse_args()
 

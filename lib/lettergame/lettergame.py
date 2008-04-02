@@ -152,10 +152,8 @@ class LetterGame (object):
       tick = None):
 
     self.size = size
-    self.maxSprites = maxSprites is not None \
-        and maxSprites or DEFAULT_MAX_SPRITES
-    self.tick = tick is not None \
-        and tick or DEFAULT_TICK
+    self.maxSprites = maxSprites and maxSprites or DEFAULT_MAX_SPRITES
+    self.tick = tick and tick or DEFAULT_TICK
     self.quit = False
     self.flags = 0
     self.isFullScreen = False
