@@ -2,7 +2,7 @@
 
 import os, sys, optparse, time, random
 import pygame
-from limitedQueue import LimitedQueue
+from spritequeue import SpriteQueue
 
 DEFAULT_MAX_SPRITES   = 10
 DEFAULT_TICK          = 60
@@ -209,8 +209,7 @@ class LetterGame (object):
 
     self.cat = bouncingImage(os.path.join(self.imageDirectory, 'cat-small.png'),
         self.screen, colorkey=(0,255,0))
-    self.sprites = pygame.sprite.Group(self.cat)
-    self.Qsprites = LimitedQueue(self.maxSprites, lambda x: x.kill())
+    self.sprites = SpriteQueue(self.maxSprites)
     self.clock = pygame.time.Clock()
 
     background = pygame.Surface(self.screen.get_size())
@@ -270,12 +269,10 @@ class LetterGame (object):
 
   def newLetter(self, event):
     letter = animatedLetter(self.letterOrigin, event.unicode.upper())
-    self.Qsprites.enqueue(letter)
     self.sprites.add(letter)
 
   def newRipple(self, event):
     ripple = simpleRipple(event.pos)
-    self.Qsprites.enqueue(ripple)
     self.sprites.add(ripple)
 
   def toggleFullScreen(self):
