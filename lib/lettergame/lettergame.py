@@ -207,21 +207,21 @@ class LetterGame (object):
 
     self.cat = bouncingImage(os.path.join(self.imageDirectory, 'cat-small.png'),
         self.screen, colorkey=(0,255,0))
-    self.sprites = SpriteQueue(self.maxSprites, self.cat)
+    self.dynsprites = SpriteQueue(self.maxSprites)
+    self.fixsprites = pygame.sprite.Group(self.cat)
     self.clock = pygame.time.Clock()
 
-    background = pygame.Surface(self.screen.get_size())
-    background = background.convert()
-    background.fill((0, 0, 0))
+    self.spritelayer = pygame.Surface(self.screen.get_size()).convert()
+    self.spritelayer.fill((0, 0, 0))
 
-    self.background = background
-    self.screen.blit(background, (0, 0))
+    self.background = pygame.Surface(self.screen.get_size()).convert()
+    self.background.fill((0, 0, 0))
+
+    self.screen.blit(self.background, (0, 0))
 
     self.loop()
 
   def loop(self):
-    background = self.background
-
     while 1:
       self.clock.tick(self.tick)
 
@@ -231,10 +231,14 @@ class LetterGame (object):
       if self.quit:
         break
 
-      background.fill((0, 0, 0))
-      self.sprites.update()
-      self.sprites.draw(background)
-      self.screen.blit(background, (0,0))
+      self.dynsprites.clear(self.spritelayer, self.background)
+      self.fixsprites.clear(self.spritelayer, self.background)
+      self.dynsprites.update()
+      self.fixsprites.update()
+      self.dynsprites.draw(self.spritelayer)
+      self.fixsprites.draw(self.spritelayer)
+
+      self.screen.blit(self.spritelayer, (0,0))
       pygame.display.flip()
 
   def handleEvent(self, event):
@@ -267,11 +271,11 @@ class LetterGame (object):
 
   def newLetter(self, event):
     letter = animatedLetter(self.letterOrigin, event.unicode.upper())
-    self.sprites.add(letter)
+    self.dynsprites.add(letter)
 
   def newRipple(self, event):
     ripple = simpleRipple(event.pos)
-    self.sprites.add(ripple)
+    self.dynsprites.add(ripple)
 
   def toggleFullScreen(self):
     if self.isFullScreen:
