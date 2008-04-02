@@ -3,13 +3,13 @@ import pygame
 class SpriteQueue(pygame.sprite.Group):
 
   def __init__ (self, limit, *sprites):
-    super(SpriteQueue,self).__init__(*sprites)
-
     if limit <= 0:
       raise ValueError('Limit must be >= 0.', limit)
 
     self.limit = limit
     self.queue = []
+
+    super(SpriteQueue,self).__init__(*sprites)
 
   def add_internal(self, sprite):
     self.queue.append(sprite)

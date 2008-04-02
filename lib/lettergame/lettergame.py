@@ -207,7 +207,7 @@ class LetterGame (object):
 
     self.cat = bouncingImage(os.path.join(self.imageDirectory, 'cat-small.png'),
         self.screen, colorkey=(0,255,0))
-    self.sprites = SpriteQueue(self.maxSprites)
+    self.sprites = SpriteQueue(self.maxSprites, self.cat)
     self.clock = pygame.time.Clock()
 
     background = pygame.Surface(self.screen.get_size())
