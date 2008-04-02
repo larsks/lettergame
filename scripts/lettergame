@@ -11,7 +11,8 @@ def parse_args():
   parser.add_option('-T', '--tick', default='60')
   parser.add_option('-F', '--fullscreen', action='store_true', default=False)
   parser.add_option('-H', '--use-hardware', action='store_true', default=False)
-  parser.add_option('-d', '--sound-dir', default = 'sounds')
+  parser.add_option('-d', '--sound-dir')
+  parser.add_option('-M', '--max-sprites', default = None)
 
   return parser.parse_args()
 
@@ -25,6 +26,7 @@ def main():
 		  fullscreen = opts.fullscreen, 
 		  useHardware = opts.use_hardware,
 		  soundDirectory = opts.sound_dir,
+      maxSprites = int(opts.max_sprites),
 		  tick = int(opts.tick))
   game.run()
 

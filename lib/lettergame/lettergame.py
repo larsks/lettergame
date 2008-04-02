@@ -4,6 +4,9 @@ import os, sys, optparse, time, random
 import pygame
 from limitedQueue import LimitedQueue
 
+DEFAULT_MAX_SPRITES   = 10
+DEFAULT_TICK          = 60
+
 def randomColor():
   return (random.randint(0,255),
       random.randint(0,255),
@@ -145,26 +148,26 @@ class LetterGame (object):
       useHardware = False, 
       soundDirectory = None,
       imageDirectory = None,
-      maxSprites = 10,
-      tick = 60):
+      maxSprites = None,
+      tick = None):
 
     self.size = size
-    self.maxSprites = maxSprites
-    self.tick = tick
+    self.maxSprites = maxSprites is not None \
+        and maxSprites or DEFAULT_MAX_SPRITES
+    self.tick = tick is not None \
+        and tick or DEFAULT_TICK
     self.quit = False
     self.flags = 0
     self.isFullScreen = False
     self.sounds = {}
 
-    if soundDirectory is not None:
-      self.soundDirectory = soundDirectory
-    else:
-      self.soundDirectory = os.path.join(os.path.dirname(__file__), 'sounds')
+    self.soundDirectory = soundDirectory is not None \
+        and soundDirectory \
+        or os.path.join(os.path.dirname(__file__), 'sounds')
 
-    if imageDirectory is not None:
-      self.imageDirectory = imageDirectory
-    else:
-      self.imageDirectory = os.path.join(os.path.dirname(__file__), 'images')
+    self.imageDirectory = imageDirectory is not None \
+        and imageDirectory \
+        or os.path.join(os.path.dirname(__file__), 'images')
 
     if fullscreen:
       self.isFullScreen = True
