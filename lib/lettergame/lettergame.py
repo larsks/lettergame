@@ -7,17 +7,33 @@ from spritequeue import SpriteQueue
 DEFAULT_MAX_SPRITES   = 10
 DEFAULT_TICK          = 60
 
+DYNAMIC_LAYER         = 0
+FIXED_LAYER           = 1
+
 def randomColor():
+  '''Returns a random (r,g,b) tuple.'''
+
   return (random.randint(0,255),
       random.randint(0,255),
       random.randint(0,255))
 
 def randomNotZeroSpeed():
-  return random.choice((-2,-1,1,2))
+  '''Returns a random number in the range -3 <= x <= 3, excluding 0.'''
+
+  return random.choice(list(set(range(-3,4)) - set([0])))
 
 class bouncingImage(pygame.sprite.Sprite):
+  '''An image that bounces around the screen.'''
 
   def __init__ (self, imgPath, container, colorkey = None, holdTime = 5):
+    '''Initialize a new bouncingImage instance.
+
+    - imgPath -- path to an image file
+    - container -- a Rect that defines the borders in which the image moves
+    - colorKey -- set this to make a color transparent
+    - holdTime -- how long to pause if we receive a click() event.
+    '''
+
     super(bouncingImage, self).__init__()
     self.image = pygame.image.load(imgPath).convert()
     self.container = container
@@ -29,18 +45,17 @@ class bouncingImage(pygame.sprite.Sprite):
       self.image.set_colorkey(colorkey)
     self.rect = self.image.get_rect()
 
-    self.rect.centerx = random.randint(self.rect.width,container.get_rect().width - self.rect.width)
-    self.rect.centery = random.randint(self.rect.height,container.get_rect().height - self.rect.height)
+    self.rect.centerx = random.randint(self.rect.width,container.width - self.rect.width)
+    self.rect.centery = random.randint(self.rect.height,container.height - self.rect.height)
 
   def update(self):
     if self.state == 0:
       self.rect = self.rect.move(self.speed)
-      container = self.container.get_rect()
-      if not container.contains(self.rect):
-        tl = not container.collidepoint(self.rect.topleft)
-        tr = not container.collidepoint(self.rect.topright)
-        bl = not container.collidepoint(self.rect.bottomleft)
-        br = not container.collidepoint(self.rect.bottomright)
+      if not self.container.contains(self.rect):
+        tl = not self.container.collidepoint(self.rect.topleft)
+        tr = not self.container.collidepoint(self.rect.topright)
+        bl = not self.container.collidepoint(self.rect.bottomleft)
+        br = not self.container.collidepoint(self.rect.bottomright)
 
         if (tl and tr) or (bl and br):
           self.speed = (self.speed[0], -self.speed[1])
@@ -82,8 +97,7 @@ class simpleRipple(pygame.sprite.Sprite):
     self.image.set_colorkey((0,0,0))
     self.rect = self.image.get_rect()
 
-    self.rect.centerx = self.center[0]
-    self.rect.centery = self.center[1]
+    self.rect.center = self.center
     pygame.draw.circle(self.image, self.color, (self.size, self.size), self.size, 8)
 
   def update(self):
@@ -145,39 +159,47 @@ class LetterGame (object):
 
   def __init__ (self, size = (0, 0),
       fullscreen = False,
-      useHardware = False, 
-      soundDirectory = None,
-      imageDirectory = None,
       maxSprites = None,
       tick = None):
 
     self.size = size
-    self.maxSprites = maxSprites and maxSprites or DEFAULT_MAX_SPRITES
     self.tick = tick and tick or DEFAULT_TICK
     self.quit = False
     self.flags = 0
-    self.isFullScreen = False
     self.sounds = {}
+    self.sprites = {}
+    self.layers = [
+        SpriteQueue(maxSprites and maxSprites or DEFAULT_MAX_SPRITES),
+        pygame.sprite.Group()
+        ]
 
-    self.soundDirectory = soundDirectory is not None \
-        and soundDirectory \
-        or os.path.join(os.path.dirname(__file__), 'sounds')
+    self.soundDirectory = os.path.join(os.path.dirname(__file__), 'sounds')
+    self.imageDirectory = os.path.join(os.path.dirname(__file__), 'images')
 
-    self.imageDirectory = imageDirectory is not None \
-        and imageDirectory \
-        or os.path.join(os.path.dirname(__file__), 'images')
+    self.clock = pygame.time.Clock()
 
     if fullscreen:
-      self.isFullScreen = True
       self.flags = pygame.FULLSCREEN
 
-    if useHardware:
-      self.isFullScreen = True
-      self.flags = pygame.FULLSCREEN | pygame.HWSURFACE \
-          | pygame.DOUBLEBUF
-
+  def run(self):
     pygame.init()
+
+    self.screen = pygame.display.set_mode(self.size, self.flags)
+
+    self.loadSprites()
     self.loadSounds()
+
+    self.letterOrigin = self.screen.get_rect().center
+
+    self.background = pygame.Surface(self.screen.get_size()).convert()
+    self.background.fill((0, 0, 0))
+
+    self.loop()
+
+  def loadSprites(self):
+    self.sprites['cat'] = bouncingImage(os.path.join(
+      self.imageDirectory, 'cat-small.png'), self.screen.get_rect(), colorkey=(0,255,0))
+    self.layers[FIXED_LAYER].add(self.sprites['cat'])
 
   def loadSounds(self):
     if self.soundDirectory is None: return
@@ -201,27 +223,9 @@ class LetterGame (object):
         except KeyError:
           self.sounds[which] = [sound]
 
-  def run(self):
-    self.screen = pygame.display.set_mode(self.size, self.flags)
-    self.letterOrigin = self.screen.get_rect().center
-
-    self.cat = bouncingImage(os.path.join(self.imageDirectory, 'cat-small.png'),
-        self.screen, colorkey=(0,255,0))
-    self.dynsprites = SpriteQueue(self.maxSprites)
-    self.fixsprites = pygame.sprite.Group(self.cat)
-    self.clock = pygame.time.Clock()
-
-    self.spritelayer = pygame.Surface(self.screen.get_size()).convert()
-    self.spritelayer.fill((0, 0, 0))
-
-    self.background = pygame.Surface(self.screen.get_size()).convert()
-    self.background.fill((0, 0, 0))
-
-    self.screen.blit(self.background, (0, 0))
-
-    self.loop()
-
   def loop(self):
+    spritelayer = pygame.Surface(self.screen.get_size()).convert()
+
     while 1:
       self.clock.tick(self.tick)
 
@@ -231,14 +235,13 @@ class LetterGame (object):
       if self.quit:
         break
 
-      self.dynsprites.clear(self.spritelayer, self.background)
-      self.fixsprites.clear(self.spritelayer, self.background)
-      self.dynsprites.update()
-      self.fixsprites.update()
-      self.dynsprites.draw(self.spritelayer)
-      self.fixsprites.draw(self.spritelayer)
+      spritelayer.fill((0,0,0))
 
-      self.screen.blit(self.spritelayer, (0,0))
+      for layer in self.layers:
+        layer.update()
+        layer.draw(spritelayer)
+
+      self.screen.blit(spritelayer, (0,0))
       pygame.display.flip()
 
   def handleEvent(self, event):
@@ -255,8 +258,8 @@ class LetterGame (object):
     elif event.type == pygame.MOUSEBUTTONDOWN:
       self.letterOrigin = event.pos
 
-      if self.cat.rect.collidepoint(event.pos):
-        self.cat.clicked()
+      if self.sprites['cat'].rect.collidepoint(event.pos):
+        self.sprites['cat'].clicked()
         self.playSound('meow')
       else:
         self.newRipple(event)
@@ -271,18 +274,18 @@ class LetterGame (object):
 
   def newLetter(self, event):
     letter = animatedLetter(self.letterOrigin, event.unicode.upper())
-    self.dynsprites.add(letter)
+    self.layers[DYNAMIC_LAYER].add(letter)
 
   def newRipple(self, event):
     ripple = simpleRipple(event.pos)
-    self.dynsprites.add(ripple)
+    self.layers[DYNAMIC_LAYER].add(ripple)
 
   def toggleFullScreen(self):
-    if self.isFullScreen:
-      self.screen = pygame.display.set_mode(self.size, self.flags & ~pygame.FULLSCREEN)
-      self.isFullScreen = False
+    if self.flags & pygame.FULLSCREEN:
+      self.flags = self.flags & ~pygame.FULLSCREEN
     else:
-      self.screen = pygame.display.set_mode(self.size, self.flags | pygame.FULLSCREEN)
-      self.isFullScreen = True
+      self.flags = self.flags | pygame.FULLSCREEN
+
+    self.screen = pygame.display.set_mode(self.size, self.flags)
 
 

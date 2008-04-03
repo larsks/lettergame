@@ -24,8 +24,6 @@ def main():
 
   game = LetterGame(size = size,
 		  fullscreen = opts.fullscreen, 
-		  useHardware = opts.use_hardware,
-		  soundDirectory = opts.sound_dir,
       maxSprites = int(opts.max_sprites),
 		  tick = int(opts.tick))
   game.run()
