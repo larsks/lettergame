@@ -40,6 +40,7 @@ class bouncingImage(pygame.sprite.Sprite):
     self.speed = (randomNotZeroSpeed(), randomNotZeroSpeed())
     self.state = 0
     self.holdTime = holdTime
+    self.lastMoveHitEdge = False
 
     if colorkey:
       self.image.set_colorkey(colorkey)
@@ -62,10 +63,20 @@ class bouncingImage(pygame.sprite.Sprite):
         bl = not self.container.collidepoint(self.rect.bottomleft)
         br = not self.container.collidepoint(self.rect.bottomright)
 
-        if (tl and tr) or (bl and br):
-          self.speed = (self.speed[0], -self.speed[1])
-        elif (tl and bl) or (tr and br):
-          self.speed = (-self.speed[0], self.speed[1])
+        if self.lastMoveHitEdge:
+          print '  STUCK!', tl, tr, bl, br
+          self.state == 2
+        else:
+          if (tl and tr) or (bl and br):
+            self.speed = (self.speed[0], -self.speed[1])
+
+          if (tl and bl) or (tr and br):
+            self.speed = (-self.speed[0], self.speed[1])
+
+          self.lastMoveHitEdge = True
+      else:
+        self.lastMoveHitEdge = False
+
     elif self.state == 1:
       # We've been clicked; wait for self.holdTime seconds.
       if time.time() > self.startHold + self.holdTime:
@@ -74,8 +85,12 @@ class bouncingImage(pygame.sprite.Sprite):
   def clicked(self):
     '''Someone clicked on us!  Stop moving for a while.'''
 
-    self.state = 1
-    self.startHold = time.time()
+    if self.state == 2:
+      self.rect.center = self.container.center
+      self.state == 0
+    elif self.state == 0:
+      self.state = 1
+      self.startHold = time.time()
 
 class simpleRipple(pygame.sprite.Sprite):
   '''Circles that expand from a given point.'''
@@ -176,6 +191,7 @@ class LetterGame (object):
 
     self.size = size
     self.tick = tick and tick or DEFAULT_TICK
+    print 'TICK:', self.tick
     self.quit = False
     self.flags = 0
     self.sounds = {}
