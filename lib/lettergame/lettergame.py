@@ -49,9 +49,14 @@ class bouncingImage(pygame.sprite.Sprite):
     self.rect.centery = random.randint(self.rect.height,container.height - self.rect.height)
 
   def update(self):
+    '''Move image around the screen.  If we hit the side of the screen, reverse 
+    direction.'''
+
     if self.state == 0:
       self.rect = self.rect.move(self.speed)
+
       if not self.container.contains(self.rect):
+        # Found out where we hit the edge.
         tl = not self.container.collidepoint(self.rect.topleft)
         tr = not self.container.collidepoint(self.rect.topright)
         bl = not self.container.collidepoint(self.rect.bottomleft)
@@ -62,21 +67,25 @@ class bouncingImage(pygame.sprite.Sprite):
         elif (tl and bl) or (tr and br):
           self.speed = (-self.speed[0], self.speed[1])
     elif self.state == 1:
+      # We've been clicked; wait for self.holdTime seconds.
       if time.time() > self.startHold + self.holdTime:
         self.state = 0
 
   def clicked(self):
+    '''Someone clicked on us!  Stop moving for a while.'''
+
     self.state = 1
     self.startHold = time.time()
 
 class simpleRipple(pygame.sprite.Sprite):
+  '''Circles that expand from a given point.'''
 
-  def __init__ (self, center,
-      initialSize = 10,
-      maxSize = 500,
-      step = 5,
-      speed = 0,
-      color = None):
+  def __init__ (self, center, initialSize = 10, maxSize = 500,
+      step = 5, speed = 0, color = None):
+    '''Initialize a new simpleRipple sprite.  The circle will grow
+    `step` increments every `speed` ticks.  If `speed` is 0, pick a random 
+    1 <= x <= 4.'''
+
     super(simpleRipple, self).__init__()
 
     if color is None:
@@ -101,6 +110,7 @@ class simpleRipple(pygame.sprite.Sprite):
     pygame.draw.circle(self.image, self.color, (self.size, self.size), self.size, 8)
 
   def update(self):
+    # Only update every self.speed ticks.
     self.counter -= 1
     if self.counter: return
     self.counter = self.speed
@@ -112,6 +122,7 @@ class simpleRipple(pygame.sprite.Sprite):
       self.kill()
 
 class animatedLetter(pygame.sprite.Sprite):
+  '''Letters that grow.'''
 
   def __init__(self, origin, letter, fontName = None, 
       color = None,
@@ -138,8 +149,7 @@ class animatedLetter(pygame.sprite.Sprite):
       font = pygame.font.Font(self.fontName, self.size)
       self.image = font.render(self.letter, 1, self.color)
       self.rect = self.image.get_rect()
-      self.rect.centerx = self.origin[0]
-      self.rect.centery = self.origin[1]
+      self.rect.center = self.origin
   
   def update(self):
     if self.state == 0:
@@ -152,6 +162,8 @@ class animatedLetter(pygame.sprite.Sprite):
       self.draw()
 
     elif self.state == 1:
+      # After reaching maximum size, pause on screen for self.holdTime
+      # seconds before disappearing.
       if time.time() > self.finalUpdate + self.holdTime:
         self.kill()
 
@@ -189,6 +201,8 @@ class LetterGame (object):
     self.loadSprites()
     self.loadSounds()
 
+    # Letters start in the center of the screen (but this can be
+    # changed by mouse clicks).
     self.letterOrigin = self.screen.get_rect().center
 
     self.background = pygame.Surface(self.screen.get_size()).convert()
