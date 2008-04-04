@@ -7,7 +7,7 @@ from lettergame import LetterGame
 def parse_args():
   parser = optparse.OptionParser()
 
-  parser.add_option('-g', '--geometry', default='800x600')
+  parser.add_option('-g', '--geometry', default='1024x768')
   parser.add_option('-T', '--tick', default=0)
   parser.add_option('-F', '--fullscreen', action='store_true', default=False)
   parser.add_option('-H', '--use-hardware', action='store_true', default=False)
