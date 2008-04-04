@@ -2,7 +2,10 @@
 
 import os, sys, optparse, time, random
 import pygame
+import observer
 from spritequeue import SpriteQueue
+from bouncer import Bouncer
+from cursor import Cursor
 
 DEFAULT_MAX_SPRITES   = 10
 DEFAULT_TICK          = 60
@@ -17,80 +20,42 @@ def randomColor():
       random.randint(0,255),
       random.randint(0,255))
 
-def randomNotZeroSpeed():
-  '''Returns a random number in the range -3 <= x <= 3, excluding 0.'''
-
-  return random.choice(list(set(range(-3,4)) - set([0])))
-
-class bouncingImage(pygame.sprite.Sprite):
+class Cat(Bouncer):
   '''An image that bounces around the screen.'''
 
-  def __init__ (self, imgPath, container, colorkey = None, holdTime = 5):
-    '''Initialize a new bouncingImage instance.
-
-    - imgPath -- path to an image file
-    - container -- a Rect that defines the borders in which the image moves
-    - colorKey -- set this to make a color transparent
-    - holdTime -- how long to pause if we receive a click() event.
-    '''
-
-    super(bouncingImage, self).__init__()
-    self.image = pygame.image.load(imgPath).convert()
-    self.container = container
-    self.speed = (randomNotZeroSpeed(), randomNotZeroSpeed())
-    self.state = 0
-    self.holdTime = holdTime
-    self.lastMoveHitEdge = False
-
+  def __init__ (self, path, container, colorkey = None, holdTime = 5):
+    image = pygame.image.load(path).convert()
     if colorkey:
-      self.image.set_colorkey(colorkey)
-    self.rect = self.image.get_rect()
+      image.set_colorkey(colorkey)
 
-    self.rect.centerx = random.randint(self.rect.width,container.width - self.rect.width)
-    self.rect.centery = random.randint(self.rect.height,container.height - self.rect.height)
+    super(Cat, self).__init__(image, container)
+
+    self.clicked = False
+    self.holdTime = holdTime
 
   def update(self):
-    '''Move image around the screen.  If we hit the side of the screen, reverse 
-    direction.'''
-
-    if self.state == 0:
-      self.rect = self.rect.move(self.speed)
-
-      if not self.container.contains(self.rect):
-        # Found out where we hit the edge.
-        tl = not self.container.collidepoint(self.rect.topleft)
-        tr = not self.container.collidepoint(self.rect.topright)
-        bl = not self.container.collidepoint(self.rect.bottomleft)
-        br = not self.container.collidepoint(self.rect.bottomright)
-
-        if self.lastMoveHitEdge:
-          print '  STUCK!', tl, tr, bl, br
-          self.state == 2
-        else:
-          if (tl and tr) or (bl and br):
-            self.speed = (self.speed[0], -self.speed[1])
-
-          if (tl and bl) or (tr and br):
-            self.speed = (-self.speed[0], self.speed[1])
-
-          self.lastMoveHitEdge = True
-      else:
-        self.lastMoveHitEdge = False
-
-    elif self.state == 1:
+    if self.clicked:
       # We've been clicked; wait for self.holdTime seconds.
       if time.time() > self.startHold + self.holdTime:
-        self.state = 0
+        self.clicked = False
+    else:
+      super(Cat, self).update()
 
-  def clicked(self):
+  def notify(self, event):
     '''Someone clicked on us!  Stop moving for a while.'''
 
-    if self.state == 2:
-      self.rect.center = self.container.center
-      self.state == 0
-    elif self.state == 0:
-      self.state = 1
+    if not self.clicked:
+      self.clicked = True
       self.startHold = time.time()
+
+class Arrow(Cursor):
+
+  def __init__ (self, path, colorkey = None):
+    image = pygame.image.load(path).convert()
+    if colorkey:
+      image.set_colorkey(colorkey)
+
+    super(Arrow, self).__init__(image)
 
 class simpleRipple(pygame.sprite.Sprite):
   '''Circles that expand from a given point.'''
@@ -190,16 +155,22 @@ class LetterGame (object):
       tick = None):
 
     self.size = size
-    self.tick = tick and tick or DEFAULT_TICK
+    self.tick = tick or DEFAULT_TICK
     print 'TICK:', self.tick
     self.quit = False
     self.flags = 0
     self.sounds = {}
     self.sprites = {}
+
     self.layers = [
-        SpriteQueue(maxSprites and maxSprites or DEFAULT_MAX_SPRITES),
+        SpriteQueue(maxSprites or DEFAULT_MAX_SPRITES),
         pygame.sprite.Group()
-        ]
+    ]
+
+    self.events = {
+      pygame.MOUSEBUTTONDOWN  : observer.Subject(),
+      pygame.KEYDOWN          : observer.Subject(),
+    }
 
     self.soundDirectory = os.path.join(os.path.dirname(__file__), 'sounds')
     self.imageDirectory = os.path.join(os.path.dirname(__file__), 'images')
@@ -227,9 +198,13 @@ class LetterGame (object):
     self.loop()
 
   def loadSprites(self):
-    self.sprites['cat'] = bouncingImage(os.path.join(
+    self.sprites['cat'] = Cat(os.path.join(
       self.imageDirectory, 'cat-small.png'), self.screen.get_rect(), colorkey=(0,255,0))
     self.layers[FIXED_LAYER].add(self.sprites['cat'])
+
+    self.sprites['arrow'] = Arrow(os.path.join(
+      self.imageDirectory, 'arrow.png'), colorkey=(0,255,0))
+    self.layers[FIXED_LAYER].add(self.sprites['arrow'])
 
   def loadSounds(self):
     if self.soundDirectory is None: return
@@ -289,7 +264,7 @@ class LetterGame (object):
       self.letterOrigin = event.pos
 
       if self.sprites['cat'].rect.collidepoint(event.pos):
-        self.sprites['cat'].clicked()
+        self.sprites['cat'].notify(None)
         self.playSound('meow')
       else:
         self.newRipple(event)
