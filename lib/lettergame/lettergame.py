@@ -49,6 +49,8 @@ class GameWidget (object):
 class Cat(Bouncer):
   '''An image that bounces around the screen.'''
 
+  category = 'cat'
+
   def __init__ (self, container, colorkey = None, holdTime = 5):
     image = pygame.image.load(os.path.join(imageDirectory,
       'cat.png')).convert()
@@ -79,11 +81,13 @@ class Cat(Bouncer):
   def notify(self, event):
     '''Someone clicked on us!  Stop moving for a while.'''
 
+    random.choice(self.sounds).play()
+
     if not self.clicked:
-      random.choice(self.sounds).play()
       self.clicked = True
       self.startHold = time.time()
-      return True
+
+    return True
 
 class Arrow(Cursor):
 
