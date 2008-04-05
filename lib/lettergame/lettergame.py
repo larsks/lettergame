@@ -26,8 +26,9 @@ def randomColor():
 class Cat(Bouncer):
   '''An image that bounces around the screen.'''
 
-  def __init__ (self, path, container, colorkey = None, holdTime = 5):
-    image = pygame.image.load(path).convert()
+  def __init__ (self, container, colorkey = None, holdTime = 5):
+    image = pygame.image.load(os.path.join(imageDirectory,
+      'cat.png')).convert()
     if colorkey:
       image.set_colorkey(colorkey)
 
@@ -63,8 +64,9 @@ class Cat(Bouncer):
 
 class Arrow(Cursor):
 
-  def __init__ (self, path, colorkey = None):
-    image = pygame.image.load(path).convert()
+  def __init__ (self, colorkey = None):
+    image = pygame.image.load(os.path.join(imageDirectory,
+      'arrow.png')).convert()
     if colorkey:
       image.set_colorkey(colorkey)
 
@@ -217,6 +219,8 @@ class HotKeyDispatcher (GameWidget):
     elif event.key == 27:
       self.game.quit = True
       res = True
+    elif event.key == 32:
+      self.game.layers[DYNAMIC_LAYER].empty()
 
     return res
 
@@ -229,7 +233,6 @@ class LetterGame (object):
 
     self.size = size
     self.tick = tick or DEFAULT_TICK
-    print 'TICK:', self.tick
     self.quit = False
     self.flags = 0
     self.sprites = {}
@@ -274,15 +277,12 @@ class LetterGame (object):
     self.loop()
 
   def loadSprites(self):
-    cat = Cat(os.path.join(imageDirectory, 'cat-small.png'),
-      self.screen.get_rect(),
-      colorkey=(0,255,0))
+    cat = Cat(self.screen.get_rect(), colorkey=(0,255,0))
     self.layers[FIXED_LAYER].add(cat)
     self.events[pygame.MOUSEBUTTONDOWN].attach(cat,
         lambda self, event: self.rect.collidepoint(event.pos))
 
-    arrow = Arrow(os.path.join(imageDirectory, 'arrow.png'),
-        colorkey=(0,255,0))
+    arrow = Arrow(colorkey=(0,255,0))
     self.layers[FIXED_LAYER].add(arrow)
     self.events[pygame.MOUSEMOTION].attach(arrow)
 
