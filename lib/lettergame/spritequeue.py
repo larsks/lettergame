@@ -16,7 +16,6 @@ class SpriteQueue(pygame.sprite.Group):
     super(SpriteQueue, self).add_internal(sprite)
 
     if len(self.queue) > self.limit:
-      print 'DEQUEUE'
       oldsprite = self.queue.pop(0)
       super(SpriteQueue, self).remove_internal(oldsprite)
 

@@ -162,13 +162,34 @@ class Letter(pygame.sprite.Sprite):
 
 class GameController (object):
 
+  category = None
+
   def __init__ (self, game):
     self.game = game
+    self.sounds = []
+
+    if self.category is not None:
+      self.loadSounds()
+
+  def loadSounds(self):
+    mySoundDir = os.path.join(soundDirectory, self.category)
+    if os.path.isdir(mySoundDir):
+      for soundFile in [os.path.join(mySoundDir, x)
+          for x in os.listdir(mySoundDir)
+          if x.endswith('.wav')]:
+        self.sounds.append(pygame.mixer.Sound(soundFile))
+
+  def play(self):
+    if self.sounds:
+      random.choice(self.sounds).play()
 
 class RippleFactory (GameController):
 
+  category = 'ripple'
+
   def notify(self, event):
-    self.game.layers[0].add(Ripple(event.pos))
+    self.play()
+    self.game.layers[DYNAMIC_LAYER].add(Ripple(event.pos))
 
 class LetterPosition (GameController):
 
@@ -177,16 +198,17 @@ class LetterPosition (GameController):
 
 class LetterFactory (GameController):
 
+  category = 'letter'
+
   def notify(self, event):
-    self.game.layers[0].add(Letter(self.game.letterOrigin,
+    self.play()
+    self.game.layers[DYNAMIC_LAYER].add(Letter(self.game.letterOrigin,
         event.unicode.upper()))
 
 class HotKeyDispatcher (GameController):
 
   def notify(self, event):
     res = False
-
-    print 'HOTKEY:', event
 
     if event.mod == 256:
       if event.key == 102:
@@ -214,7 +236,7 @@ class LetterGame (object):
 
     self.layers = [
         SpriteQueue(maxSprites or DEFAULT_MAX_SPRITES),
-        pygame.sprite.Group()
+        pygame.sprite.OrderedUpdates()
     ]
 
     self.events = {
@@ -256,16 +278,16 @@ class LetterGame (object):
     self.loop()
 
   def loadSprites(self):
-    cat = Cat(os.path.join(
-      self.imageDirectory, 'cat-small.png'), self.screen.get_rect(), colorkey=(0,255,0))
+    cat = Cat(os.path.join(self.imageDirectory, 'cat-small.png'),
+      self.screen.get_rect(),
+      colorkey=(0,255,0))
     self.layers[FIXED_LAYER].add(cat)
-
-    arrow = Arrow(os.path.join(
-      self.imageDirectory, 'arrow.png'), colorkey=(0,255,0))
-    self.layers[FIXED_LAYER].add(arrow)
-
     self.events[pygame.MOUSEBUTTONDOWN].attach(cat,
         lambda self, event: self.rect.collidepoint(event.pos))
+
+    arrow = Arrow(os.path.join(self.imageDirectory, 'arrow.png'),
+        colorkey=(0,255,0))
+    self.layers[FIXED_LAYER].add(arrow)
     self.events[pygame.MOUSEMOTION].attach(arrow)
 
   def loadSounds(self):
