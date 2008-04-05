@@ -160,7 +160,7 @@ class Letter(pygame.sprite.Sprite):
       if time.time() > self.finalUpdate + self.holdTime:
         self.kill()
 
-class GameController (object):
+class GameWidget (object):
 
   category = None
 
@@ -183,7 +183,7 @@ class GameController (object):
     if self.sounds:
       random.choice(self.sounds).play()
 
-class RippleFactory (GameController):
+class RippleFactory (GameWidget):
 
   category = 'ripple'
 
@@ -191,12 +191,12 @@ class RippleFactory (GameController):
     self.play()
     self.game.layers[DYNAMIC_LAYER].add(Ripple(event.pos))
 
-class LetterPosition (GameController):
+class LetterPosition (GameWidget):
 
   def notify(self, event):
     self.game.letterOrigin = event.pos
 
-class LetterFactory (GameController):
+class LetterFactory (GameWidget):
 
   category = 'letter'
 
@@ -205,7 +205,7 @@ class LetterFactory (GameController):
     self.game.layers[DYNAMIC_LAYER].add(Letter(self.game.letterOrigin,
         event.unicode.upper()))
 
-class HotKeyDispatcher (GameController):
+class HotKeyDispatcher (GameWidget):
 
   def notify(self, event):
     res = False
@@ -216,6 +216,7 @@ class HotKeyDispatcher (GameController):
         res = True
     elif event.key == 27:
       self.game.quit = True
+      res = True
 
     return res
 
@@ -231,7 +232,6 @@ class LetterGame (object):
     print 'TICK:', self.tick
     self.quit = False
     self.flags = 0
-    self.sounds = {}
     self.sprites = {}
 
     self.layers = [
@@ -245,9 +245,6 @@ class LetterGame (object):
       pygame.MOUSEMOTION      : observer.Subject(),
     }
 
-    self.soundDirectory = os.path.join(os.path.dirname(__file__), 'sounds')
-    self.imageDirectory = os.path.join(os.path.dirname(__file__), 'images')
-
     self.clock = pygame.time.Clock()
 
     if fullscreen:
@@ -260,7 +257,6 @@ class LetterGame (object):
     self.screen = pygame.display.set_mode(self.size, self.flags)
 
     self.loadSprites()
-    self.loadSounds()
 
     self.events[pygame.MOUSEBUTTONDOWN].attach(RippleFactory(self))
     self.events[pygame.MOUSEBUTTONDOWN].attach(LetterPosition(self))
@@ -278,39 +274,17 @@ class LetterGame (object):
     self.loop()
 
   def loadSprites(self):
-    cat = Cat(os.path.join(self.imageDirectory, 'cat-small.png'),
+    cat = Cat(os.path.join(imageDirectory, 'cat-small.png'),
       self.screen.get_rect(),
       colorkey=(0,255,0))
     self.layers[FIXED_LAYER].add(cat)
     self.events[pygame.MOUSEBUTTONDOWN].attach(cat,
         lambda self, event: self.rect.collidepoint(event.pos))
 
-    arrow = Arrow(os.path.join(self.imageDirectory, 'arrow.png'),
+    arrow = Arrow(os.path.join(imageDirectory, 'arrow.png'),
         colorkey=(0,255,0))
     self.layers[FIXED_LAYER].add(arrow)
     self.events[pygame.MOUSEMOTION].attach(arrow)
-
-  def loadSounds(self):
-    if self.soundDirectory is None: return
-
-    self.sounds = {}
-
-    for which in ['keydown', 'mousedown', 'meow']:
-      thisDir = os.path.join(self.soundDirectory, which)
-      if not os.path.isdir(thisDir):
-        continue
-
-      soundFiles = [x for x in os.listdir(thisDir)
-          if x.endswith('.wav')]
-
-      for x in soundFiles:
-        path = os.path.join(thisDir, x)
-        sound = pygame.mixer.Sound(path)
-
-        try:
-          self.sounds[which].append(sound)
-        except KeyError:
-          self.sounds[which] = [sound]
 
   def loop(self):
     spritelayer = pygame.Surface(self.screen.get_size()).convert()
@@ -339,14 +313,6 @@ class LetterGame (object):
 
     if event.type == pygame.QUIT:
       sys.exit()
-#    elif event.type == pygame.KEYDOWN:
-#      if event.key == 27:
-#        self.quit = True
-#      elif event.mod == 256 and event.key == 102:
-#        self.toggleFullScreen()
-#      elif event.unicode.isalnum():
-#        self.newLetter(event)
-#        self.playSound('keydown')
 
   def toggleFullScreen(self):
     if self.flags & pygame.FULLSCREEN:
