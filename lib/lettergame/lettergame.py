@@ -23,6 +23,29 @@ def randomColor():
       random.randint(0,255),
       random.randint(0,255))
 
+class GameWidget (object):
+
+  category = None
+
+  def __init__ (self, game):
+    self.game = game
+    self.sounds = []
+
+    if self.category is not None:
+      self.loadSounds()
+
+  def loadSounds(self):
+    mySoundDir = os.path.join(soundDirectory, self.category)
+    if os.path.isdir(mySoundDir):
+      for soundFile in [os.path.join(mySoundDir, x)
+          for x in os.listdir(mySoundDir)
+          if x.endswith('.wav')]:
+        self.sounds.append(pygame.mixer.Sound(soundFile))
+
+  def play(self):
+    if self.sounds:
+      random.choice(self.sounds).play()
+
 class Cat(Bouncer):
   '''An image that bounces around the screen.'''
 
@@ -161,29 +184,6 @@ class Letter(pygame.sprite.Sprite):
       # seconds before disappearing.
       if time.time() > self.finalUpdate + self.holdTime:
         self.kill()
-
-class GameWidget (object):
-
-  category = None
-
-  def __init__ (self, game):
-    self.game = game
-    self.sounds = []
-
-    if self.category is not None:
-      self.loadSounds()
-
-  def loadSounds(self):
-    mySoundDir = os.path.join(soundDirectory, self.category)
-    if os.path.isdir(mySoundDir):
-      for soundFile in [os.path.join(mySoundDir, x)
-          for x in os.listdir(mySoundDir)
-          if x.endswith('.wav')]:
-        self.sounds.append(pygame.mixer.Sound(soundFile))
-
-  def play(self):
-    if self.sounds:
-      random.choice(self.sounds).play()
 
 class RippleFactory (GameWidget):
 
