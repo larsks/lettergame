@@ -9,14 +9,14 @@ def randomNotZero(min, max):
 class Bouncer(pygame.sprite.Sprite):
   '''An image that bounces around the screen.'''
 
-  def __init__ (self, image, container):
+  def __init__ (self, image = None, container = None, *args, **kwargs):
     '''Initialize a new Bouncer instance.
 
     - image -- Pygame Image instance
     - container -- a Rect that defines the borders in which the image moves
     '''
 
-    super(Bouncer, self).__init__()
+    super(Bouncer, self).__init__(*args, **kwargs)
     self.image = image
     self.container = container
     self.speed = (randomNotZero(-3,3), randomNotZero(-3,3))
