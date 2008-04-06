@@ -216,14 +216,14 @@ class HotKeyDispatcher (GameWidget):
   def notify(self, event):
     res = False
 
-    if event.mod == 256:
-      if event.key == 102:
+    if event.mod & (pygame.KMOD_ALT | pygame.KMOD_LALT | pygame.KMOD_RALT):
+      if event.key == pygame.K_f:
         self.game.toggleFullScreen()
         res = True
-    elif event.key == 27:
-      self.game.quit = True
-      res = True
-    elif event.key == 32:
+      elif event.key == pygame.K_q:
+        self.game.quit = True
+        res = True
+    elif event.key == pygame.K_SPACE:
       self.game.layers[DYNAMIC_LAYER].empty()
 
     return res
@@ -294,7 +294,7 @@ class LetterGame (object):
     spritelayer = pygame.Surface(self.screen.get_size()).convert()
 
     while 1:
-      self.clock.tick(self.tick)
+      #self.clock.tick(self.tick)
 
       for event in pygame.event.get():
         self.handleEvent(event)
@@ -312,11 +312,11 @@ class LetterGame (object):
       pygame.display.flip()
 
   def handleEvent(self, event):
-    if self.events.has_key(event.type):
-      self.events[event.type].notify_listeners(event)
-
     if event.type == pygame.QUIT:
       sys.exit()
+
+    if self.events.has_key(event.type):
+      self.events[event.type].notify_listeners(event)
 
   def toggleFullScreen(self):
     if self.flags & pygame.FULLSCREEN:
