@@ -23,7 +23,9 @@ thermonuclear war.
 Hotkeys
 -------
 
-ALT-F toggles full screen mode.  ESC exits.
+- `SPACE` clears all generated sprites (letters, ripples).
+- `ALT-F` toggles full screen mode.
+- `ALT-Q` quits.
 
 Author
 ------

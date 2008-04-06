@@ -10,9 +10,6 @@ from cursor import Cursor
 DEFAULT_MAX_SPRITES   = 10
 DEFAULT_TICK          = 60
 
-DYNAMIC_LAYER         = 0
-FIXED_LAYER           = 1
-
 soundDirectory = os.path.join(os.path.dirname(__file__), 'sounds')
 imageDirectory = os.path.join(os.path.dirname(__file__), 'images')
 
@@ -80,6 +77,8 @@ class Cat(Bouncer):
 
   def notify(self, event):
     '''Someone clicked on us!  Stop moving for a while.'''
+
+    if not self.rect.collidepoint(event.pos): return
 
     random.choice(self.sounds).play()
 
@@ -195,7 +194,7 @@ class RippleFactory (GameWidget):
 
   def notify(self, event):
     self.play()
-    self.game.layers[DYNAMIC_LAYER].add(Ripple(event.pos))
+    self.game.addDynamicSprite(Ripple(event.pos))
 
 class LetterPosition (GameWidget):
 
@@ -208,7 +207,7 @@ class LetterFactory (GameWidget):
 
   def notify(self, event):
     self.play()
-    self.game.layers[DYNAMIC_LAYER].add(Letter(self.game.letterOrigin,
+    self.game.addDynamicSprite(Letter(self.game.letterOrigin,
         event.unicode.upper()))
 
 class HotKeyDispatcher (GameWidget):
@@ -223,8 +222,11 @@ class HotKeyDispatcher (GameWidget):
       elif event.key == pygame.K_q:
         self.game.quit = True
         res = True
+      elif event.key == pygame.K_r:
+        self.game.recenter()
+        res = True
     elif event.key == pygame.K_SPACE:
-      self.game.layers[DYNAMIC_LAYER].empty()
+      self.game.clearDynamicSprites()
 
     return res
 
@@ -241,10 +243,11 @@ class LetterGame (object):
     self.flags = 0
     self.sprites = {}
 
-    self.layers = [
-        SpriteQueue(maxSprites or DEFAULT_MAX_SPRITES),
-        pygame.sprite.OrderedUpdates()
-    ]
+    self.layers = {
+        'dynamic' : SpriteQueue(maxSprites or DEFAULT_MAX_SPRITES),
+        'fixed'   : pygame.sprite.OrderedUpdates()
+    }
+    self.layering = [ 'dynamic', 'fixed' ]
 
     self.events = {
       pygame.MOUSEBUTTONDOWN  : observer.Subject(),
@@ -271,30 +274,26 @@ class LetterGame (object):
     self.events[pygame.KEYDOWN].attach(LetterFactory(self),
         lambda self, event: event.unicode.isalnum() and event.mod == 0)
 
-    # Letters start in the center of the screen (but this can be
-    # changed by mouse clicks).
-    self.letterOrigin = self.screen.get_rect().center
-
     self.background = pygame.Surface(self.screen.get_size()).convert()
     self.background.fill((0, 0, 0))
+    self.spritelayer = pygame.Surface(self.screen.get_size()).convert()
 
+    self.recenter()
     self.loop()
+
+  def recenter(self):
+    self.letterOrigin = self.screen.get_rect().center
 
   def loadSprites(self):
     cat = Cat(self.screen.get_rect(), colorkey=(0,255,0))
-    self.layers[FIXED_LAYER].add(cat)
-    self.events[pygame.MOUSEBUTTONDOWN].attach(cat,
-        lambda self, event: self.rect.collidepoint(event.pos))
+    self.addFixedSprite(cat, events = [pygame.MOUSEBUTTONDOWN])
 
     arrow = Arrow(colorkey=(0,255,0))
-    self.layers[FIXED_LAYER].add(arrow)
-    self.events[pygame.MOUSEMOTION].attach(arrow)
+    self.addFixedSprite(arrow, events = [pygame.MOUSEMOTION])
 
   def loop(self):
-    spritelayer = pygame.Surface(self.screen.get_size()).convert()
-
     while 1:
-      #self.clock.tick(self.tick)
+#     self.clock.tick(self.tick)
 
       for event in pygame.event.get():
         self.handleEvent(event)
@@ -302,14 +301,15 @@ class LetterGame (object):
       if self.quit:
         break
 
-      spritelayer.fill((0,0,0))
+#      self.spritelayer.fill((0,0,0))
 
-      for layer in self.layers:
-        layer.update()
-        layer.draw(spritelayer)
+      for layer in self.layering:
+        #self.layers[layer].clear(self.spritelayer, self.background)
+        self.layers[layer].update()
+        self.layers[layer].draw(self.spritelayer)
 
-      self.screen.blit(spritelayer, (0,0))
-      pygame.display.flip()
+      self.screen.blit(self.spritelayer, (0,0))
+      pygame.display.update()
 
   def handleEvent(self, event):
     if event.type == pygame.QUIT:
@@ -326,4 +326,24 @@ class LetterGame (object):
 
     self.screen = pygame.display.set_mode(self.size, self.flags)
 
+  def addDynamicSprite(self, sprite, events = []):
+    self.layers['dynamic'].add(sprite)
+
+    for event in events:
+      if not self.events.has_key(event):
+        self.events[event] = Subject()
+
+      self.events[event].attach(sprite)
+
+  def addFixedSprite(self, sprite, events = []):
+    self.layers['fixed'].add(sprite)
+
+    for event in events:
+      if not self.events.has_key(event):
+        self.events[event] = Subject()
+
+      self.events[event].attach(sprite)
+
+  def clearDynamicSprites(self):
+    self.layers['dynamic'].empty()
 

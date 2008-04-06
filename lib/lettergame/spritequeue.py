@@ -1,6 +1,6 @@
 import pygame
 
-class SpriteQueue(pygame.sprite.Group):
+class SpriteQueue(pygame.sprite.OrderedUpdates):
 
   def __init__ (self, limit, *sprites):
     if limit <= 0:

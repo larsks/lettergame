@@ -21,9 +21,9 @@ def main():
   size = [int(x) for x in opts.geometry.split('x')]
 
   game = LetterGame(size = size,
-		  fullscreen = opts.fullscreen, 
+      fullscreen = opts.fullscreen, 
       maxSprites = int(opts.max_sprites),
-		  tick = int(opts.tick))
+      tick = int(opts.tick))
   game.run()
 
 if __name__ == '__main__': main()
