@@ -15,7 +15,6 @@ soundDirectory = os.path.join(os.path.dirname(__file__), 'sounds')
 imageDirectory = os.path.join(os.path.dirname(__file__), 'images')
 
 class RippleFactory (GameWidget):
-
   '''Creates a new Ripple sprite when notified.'''
 
   category = 'ripple'
@@ -25,14 +24,12 @@ class RippleFactory (GameWidget):
     self.game.addDynamicSprite(sprites.Ripple(event.pos))
 
 class LetterPosition (GameWidget):
-
   '''Resets origin of letters when notified.'''
 
   def notify(self, event):
     self.game.recenter(event.pos)
 
 class LetterFactory (GameWidget):
-
   '''Creates a new Letter sprite when notified.'''
 
   category = 'letter'
@@ -45,7 +42,6 @@ class LetterFactory (GameWidget):
         event.unicode.upper()))
 
 class HotKeyDispatcher (GameWidget):
-
   '''Notified on KEYDOWN events.  Dispatches appropriate function
   based on key press.'''
 
@@ -156,8 +152,10 @@ class LetterGame (object):
       if self.quit:
         break
 
+      self.screen.blit(self.background, (0,0))
+
       for layer in self.layering:
-        self.layers[layer].clear(self.screen, self.background)
+#        self.layers[layer].clear(self.screen, self.background)
         self.layers[layer].update()
         self.layers[layer].draw(self.screen)
 
